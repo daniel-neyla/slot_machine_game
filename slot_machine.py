@@ -32,6 +32,15 @@ class SlotMachine:
             except ValueError:
                 print("Enter a valid number")
 
+    def withdraw(self):
+        amount = self.balance
+        self.balance = 0
+        print(
+            "You have withdrawn {amount}. It is now set to {balance}".format(
+                amount=amount, balance=self.balance
+            )
+        )
+
 
 # Usage
 slot_machine = SlotMachine()
