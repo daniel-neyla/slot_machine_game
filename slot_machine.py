@@ -7,48 +7,73 @@ ROWS = 3
 COLOUMNS = 3
 MAX_LINES = 3
 
-symbols_and_probabilities = {
-    "Cherry": 0.3,
-    "Lemon": 0.2,
-    "Orange": 0.15,
-    "Plum": 0.1,
-    "Bell": 0.1,
-    "Bar": 0.1,
-    "Seven": 0.05,
+
+# symbols_and_probabilities = {
+#     "Cherry": 0.3,
+#     "Lemon": 0.2,
+#     "Orange": 0.15,
+#     "Plum": 0.1,
+#     "Bell": 0.1,
+#     "Bar": 0.1,
+#     "Seven": 0.05,
+# }
+
+# payout_rates = {
+#     "Cherry": 2,
+#     "Lemon": 3,
+#     "Orange": 5,
+#     "Plum": 10,
+#     "Bell": 10,
+#     "Bar": 20,
+#     "Seven": 50,
+# }
+
+symbols_and_payouts = {
+    "Cherry": (0.3, 2),  # Cherry has a 30% probability and a payout rate of 2.
+    "Lemon": (0.2, 3),  # Lemon has a 20% probability and a payout rate of 3.
+    "Orange": (0.15, 5),  # Orange has a 15% probability and a payout rate of 5.
+    "Plum": (0.1, 10),  # Plum has a 10% probability and a payout rate of 10.
+    "Bell": (0.1, 10),  # Bell has a 10% probability and a payout rate of 10.
+    "Bar": (0.1, 20),  # Bar has a 10% probability and a payout rate of 20.
+    "Seven": (0.05, 50),  # Seven has a 5% probability and a payout rate of 50.
 }
-symbols = list(symbols_and_probabilities.keys())
-probabilities = list(symbols_and_probabilities.values())
+
+symbols = list(symbols_and_payouts.keys())
+probabilities = [value[0] for value in symbols_and_payouts.values()]
+# payouts = [value[1] for value in symbols_and_payouts.values()]
+
+
 longest_symbol = max(symbols, key=len)
 
 
-def check_vertical(reels):
-    count = 0
+def check_vertical(reels, bet):
+    prize_money = 0
     for row in reels:
         if all(symbol == row[0] for symbol in row):
-            count += 1
-    return count
+            prize_money += bet * symbols_and_payouts[row[0]][1]
+    return prize_money
 
 
-def check_horizontal(reels):
-    count = 0
+def check_horizontal(reels, bet):
+    prize_money = 0
     for s1, s2, s3 in zip(*reels):
         if s1 == s2 == s3:
-            count += 1
+            prize_money += bet * symbols_and_payouts[s1][1]
 
-    return count
+    return prize_money
 
 
-def check_diagonal(reels):
-    count = 0
+def check_diagonal(reels, bet):
+    prize_money = 0
     first_row, second_row, third_row = reels[0], reels[1], reels[2]
 
     if first_row[0] == second_row[1] == third_row[2]:
-        count += 1
+        prize_money += bet * symbols_and_payouts[first_row[0]][1]
 
     if first_row[2] == second_row[1] == third_row[0]:
-        count += 1
+        prize_money += bet * symbols_and_payouts[third_row[0]][1]
 
-    return count
+    return prize_money
 
 
 class SlotMachine:
@@ -121,18 +146,18 @@ class SlotMachine:
                 for reel in self.reels
             ]
 
-            print(spins)
             for i in range(3):
                 padded_symbols = [spin.ljust(len(longest_symbol)) for spin in spins[i]]
                 print("|".join(padded_symbols))
 
-            wins = 0
-            if self.lines == 3:
-                wins += check_diagonal(spins)
-                wins += check_horizontal(spins)
-                wins += check_vertical(spins)
-
-            print(wins)
+        total_win = 0
+        if self.lines >= 1:
+            total_win += check_horizontal(spins, self.current_bet)
+        if self.lines >= 2:
+            total_win += check_vertical(spins, self.current_bet)
+        if self.lines == 3:
+            total_win += check_diagonal(spins, self.current_bet)
+        print(total_win)
 
 
 # Usage
