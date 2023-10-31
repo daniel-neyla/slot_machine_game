@@ -7,11 +7,24 @@ ROWS = 3
 COLOUMNS = 3
 MAX_LINES = 3
 
+symbols = {
+    "Cherry": 0.3,
+    "Lemon": 0.2,
+    "Orange": 0.15,
+    "Plum": 0.1,
+    "Bell": 0.1,
+    "Bar": 0.1,
+    "Seven": 0.05,
+}
+longest_symbol = max(symbols, key=len)
+
 
 class SlotMachine:
     def __init__(self):
         self.balance = 0
         self.current_bet = 0
+        self.lines = 1
+        self.reels = [list(symbols.keys()), list(symbols.keys()), list(symbols.keys())]
 
     def get_valid_input(self, prompt, min_value, max_value):
         while True:
@@ -44,6 +57,8 @@ class SlotMachine:
             f"On how many lines do you want to bet(1-{MAX_LINES})?", 1, MAX_LINES
         )
 
+        self.lines = lines
+
         amount = self.get_valid_input(
             "How much do you want to bet on each line? ", MIN_BET, MAX_BET
         )
@@ -69,7 +84,13 @@ class SlotMachine:
 
     def spin(self):
         if self.current_bet < self.balance:
-            return
+            spins = [
+                random.choices(reel, weights=list(symbols.values()), k=3)
+                for reel in self.reels
+            ]
+            for i in range(3):
+                padded_symbols = [spin.ljust(len(longest_symbol)) for spin in spins[i]]
+                print("|".join(padded_symbols))
 
 
 # Usage
