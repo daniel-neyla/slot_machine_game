@@ -8,26 +8,6 @@ COLOUMNS = 3
 MAX_LINES = 3
 
 
-# symbols_and_probabilities = {
-#     "Cherry": 0.3,
-#     "Lemon": 0.2,
-#     "Orange": 0.15,
-#     "Plum": 0.1,
-#     "Bell": 0.1,
-#     "Bar": 0.1,
-#     "Seven": 0.05,
-# }
-
-# payout_rates = {
-#     "Cherry": 2,
-#     "Lemon": 3,
-#     "Orange": 5,
-#     "Plum": 10,
-#     "Bell": 10,
-#     "Bar": 20,
-#     "Seven": 50,
-# }
-
 symbols_and_payouts = {
     "Cherry": (0.3, 2),  # Cherry has a 30% probability and a payout rate of 2.
     "Lemon": (0.2, 3),  # Lemon has a 20% probability and a payout rate of 3.
@@ -40,8 +20,6 @@ symbols_and_payouts = {
 
 symbols = list(symbols_and_payouts.keys())
 probabilities = [value[0] for value in symbols_and_payouts.values()]
-# payouts = [value[1] for value in symbols_and_payouts.values()]
-
 
 longest_symbol = max(symbols, key=len)
 
@@ -111,7 +89,7 @@ class SlotMachine:
             return
 
         lines = self.get_valid_input(
-            f"On how many lines do you want to bet(1-{MAX_LINES})?", 1, MAX_LINES
+            f"On how many lines do you want to bet(1-{MAX_LINES})? ", 1, MAX_LINES
         )
 
         self.lines = lines
@@ -122,25 +100,26 @@ class SlotMachine:
 
         bet = amount * lines
 
-        if bet > self.balance:
+        if bet >= self.balance:
             print(
                 f"Bet cannot be bigger than your current balance, which is {self.balance}"
             )
         else:
-            print(f"Your bet is set at {bet}")
-            self.current_bet += bet
+            print(f"Your bet is set at {bet}$")
+            self.current_bet = bet
 
     def withdraw(self):
         amount = self.balance
         self.balance = 0
         print(
-            "You have withdrawn {amount}. It is now set to {balance}".format(
+            "You have withdrawn {amount}$, congrats! Your balance is now set to {balance}$".format(
                 amount=amount, balance=self.balance
             )
         )
 
     def spin(self):
-        if self.current_bet < self.balance:
+        if self.current_bet <= self.balance:
+            self.balance -= self.current_bet
             spins = [
                 random.choices(reel, weights=probabilities, k=COLOUMNS)
                 for reel in self.reels
@@ -150,14 +129,21 @@ class SlotMachine:
                 padded_symbols = [spin.ljust(len(longest_symbol)) for spin in spins[i]]
                 print("|".join(padded_symbols))
 
-        total_win = 0
-        if self.lines >= 1:
-            total_win += check_horizontal(spins, self.current_bet)
-        if self.lines >= 2:
-            total_win += check_vertical(spins, self.current_bet)
-        if self.lines == 3:
-            total_win += check_diagonal(spins, self.current_bet)
-        print(total_win)
+            total_win = 0
+            if self.lines >= 1:
+                total_win += check_horizontal(spins, self.current_bet)
+            if self.lines >= 2:
+                total_win += check_vertical(spins, self.current_bet)
+            if self.lines == 3:
+                total_win += check_diagonal(spins, self.current_bet)
+
+            self.balance += total_win
+            print(f"You won {total_win}$ and your total balance is {self.balance}$")
+
+        else:
+            print(
+                f"You do not have enough money to place this bet. Your current balance is {self.balance}"
+            )
 
 
 # Usage
