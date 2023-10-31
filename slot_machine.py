@@ -3,6 +3,9 @@ import random
 MIN_BET = 5
 MAX_BET = 100
 MAX_DEPOSIT = 1000
+ROWS = 3
+COLOUMNS = 3
+MAX_LINES = 3
 
 
 class SlotMachine:
@@ -25,16 +28,35 @@ class SlotMachine:
         amount = self.get_valid_input(
             "How much do you want to deposit? ", 1, MAX_DEPOSIT
         )
+        print(
+            "You have successfully deposited {amount} to your balance".format(
+                amount=amount
+            )
+        )
         self.balance += amount
 
     def bet(self):
-        amount = self.get_valid_input("How much do you want to bet? ", MIN_BET, MAX_BET)
-        if amount > self.balance:
+        if self.balance == 0:
+            print("You cannot place a bet when your balance is 0")
+            return
+
+        lines = self.get_valid_input(
+            f"On how many lines do you want to bet(1-{MAX_LINES})?", 1, MAX_LINES
+        )
+
+        amount = self.get_valid_input(
+            "How much do you want to bet on each line? ", MIN_BET, MAX_BET
+        )
+
+        bet = amount * lines
+
+        if bet > self.balance:
             print(
                 f"Bet cannot be bigger than your current balance, which is {self.balance}"
             )
         else:
-            self.current_bet += amount
+            print(f"Your bet is set at {bet}")
+            self.current_bet += bet
 
     def withdraw(self):
         amount = self.balance
@@ -46,7 +68,8 @@ class SlotMachine:
         )
 
     def spin(self):
-        return
+        if self.current_bet < self.balance:
+            return
 
 
 # Usage
@@ -64,7 +87,7 @@ def game():
     }
     while True:
         print(
-            "1. Make a deposit\n2. Place a bet\n3. Spin\n4. Withdraw the money\n5. Stop playing"
+            "\n1. Make a deposit\n2. Place a bet\n3. Spin\n4. Withdraw the money\n5. Stop playing"
         )
         choice = input("What do you want to do(1-5)? ")
         if choice.isdigit():
