@@ -1,6 +1,5 @@
 import random
 from rich import print
-from rich.markup import escape
 from rich.console import Console
 from rich.theme import Theme
 from pyfiglet import Figlet
@@ -39,32 +38,25 @@ probabilities = [value[0] for value in symbols_and_payouts.values()]
 longest_symbol = max(symbols, key=len)
 
 
-def check_vertical(reels, bet):
+def check_wins(reels, bet, horizontal=False, vertical=False, diagonal=False):
     prize_money = 0
-    for row in reels:
-        if all(symbol == row[0] for symbol in row):
-            prize_money += bet * symbols_and_payouts[row[0]][1]
-    return prize_money
+    if horizontal:
+        for s1, s2, s3 in zip(*reels):
+            if s1 == s2 == s3:
+                prize_money += bet * symbols_and_payouts[s1][1]
+    if vertical:
+        for row in reels:
+            if all(symbol == row[0] for symbol in row):
+                prize_money += bet * symbols_and_payouts[row[0]][1]
 
+    if diagonal:
+        first_row, second_row, third_row = reels[0], reels[1], reels[2]
 
-def check_horizontal(reels, bet):
-    prize_money = 0
-    for s1, s2, s3 in zip(*reels):
-        if s1 == s2 == s3:
-            prize_money += bet * symbols_and_payouts[s1][1]
+        if first_row[0] == second_row[1] == third_row[2]:
+            prize_money += bet * symbols_and_payouts[first_row[0]][1]
 
-    return prize_money
-
-
-def check_diagonal(reels, bet):
-    prize_money = 0
-    first_row, second_row, third_row = reels[0], reels[1], reels[2]
-
-    if first_row[0] == second_row[1] == third_row[2]:
-        prize_money += bet * symbols_and_payouts[first_row[0]][1]
-
-    if first_row[2] == second_row[1] == third_row[0]:
-        prize_money += bet * symbols_and_payouts[third_row[0]][1]
+        if first_row[2] == second_row[1] == third_row[0]:
+            prize_money += bet * symbols_and_payouts[third_row[0]][1]
 
     return prize_money
 
@@ -93,10 +85,12 @@ class SlotMachine:
         amount = self.get_valid_input(
             "How much do you want to deposit? ", 1, MAX_DEPOSIT
         )
-        console.print(
-            f"\n[info]You have successfully deposited ${amount} to your balance.[/info]\n"
-        )
+
         self.balance += amount
+
+        console.print(
+            f"\n[info]You have successfully deposited ${amount} to your balance. Your current balance is ${self.balance}.[/info]\n"
+        )
 
     def bet(self):
         if self.balance == 0:
@@ -167,11 +161,11 @@ class SlotMachine:
 
             total_win = 0
             if self.lines >= 1:
-                total_win += check_horizontal(spins, self.current_bet)
+                total_win += check_wins(spins, self.current_bet, True)
             if self.lines >= 2:
-                total_win += check_vertical(spins, self.current_bet)
+                total_win += check_wins(spins, self.current_bet, True, True)
             if self.lines == 3:
-                total_win += check_diagonal(spins, self.current_bet)
+                total_win += check_wins(spins, self.current_bet, True, True, True)
 
             self.balance += total_win
             console.print(
@@ -214,7 +208,20 @@ def game():
             choice = int(choice)
             if choice in user_choices:
                 if user_choices[choice] == "exit":
-                    break
+                    if slot_machine.balance > 0:
+                        while True:
+                            player_exit = input(
+                                "If you exit the game now, all your money will be gone. Exit(Y/N)? "
+                            )
+                            if player_exit in ["y", "Y", "n", "N"]:
+                                break
+
+                            else:
+                                console.print("[warning]Not a valid response[/warning]")
+                        if player_exit in ["Y", "y"]:
+                            break
+                    else:
+                        break
                 else:
                     user_choices[choice]()
             else:
