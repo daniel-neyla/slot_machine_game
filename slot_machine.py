@@ -1,4 +1,15 @@
 import random
+from rich import print
+from rich.markup import escape
+from rich.console import Console
+from rich.theme import Theme
+from pyfiglet import Figlet
+
+custom_theme = Theme({"info": "dim cyan", "warning": "magenta", "win": "bold green"})
+console = Console(theme=custom_theme)
+
+f = Figlet(font="slant")
+
 
 MIN_BET = 5
 MAX_BET = 100
@@ -18,7 +29,11 @@ symbols_and_payouts = {
     "Seven": (0.05, 50),  # Seven has a 5% probability and a payout rate of 50.
 }
 
+symbol_colors = ["red", "green", "yellow", "blue", "magenta", "cyan", "white"]
 symbols = list(symbols_and_payouts.keys())
+symbol_to_color = {symbol: color for symbol, color in zip(symbols, symbol_colors)}
+
+
 probabilities = [value[0] for value in symbols_and_payouts.values()]
 
 longest_symbol = max(symbols, key=len)
@@ -66,26 +81,28 @@ class SlotMachine:
             try:
                 value = int(input(prompt))
                 if not min_value <= value <= max_value:
-                    print(f"Value has to be between {min_value} and {max_value}")
+                    console.print(
+                        f"[warning]Value has to be between {min_value} and {max_value}[/warning]"
+                    )
                 else:
                     return value
             except ValueError:
-                print("Enter a valid number")
+                console.print("[warning]Enter a valid number[\warning]")
 
     def deposit(self):
         amount = self.get_valid_input(
             "How much do you want to deposit? ", 1, MAX_DEPOSIT
         )
-        print(
-            "You have successfully deposited {amount}$ to your balance".format(
-                amount=amount
-            )
+        console.print(
+            f"\n[info]You have successfully deposited ${amount} to your balance.[/info]\n"
         )
         self.balance += amount
 
     def bet(self):
         if self.balance == 0:
-            print("You cannot place a bet when your balance is 0")
+            console.print(
+                "\n[warning]You cannot place a bet when your balance is 0[/warning]"
+            )
             return
 
         lines = self.get_valid_input(
@@ -101,33 +118,52 @@ class SlotMachine:
         bet = amount * lines
 
         if bet >= self.balance:
-            print(
-                f"Bet cannot be bigger than your current balance, which is {self.balance}"
+            console.print(
+                f"\n[warning]Bet cannot be bigger than your current balance, which is {self.balance}[/warning]"
             )
         else:
-            print(f"Your bet is set at {bet}$")
+            console.print(f"\n[info]Your bet is set at {bet}$\n[/info]")
             self.current_bet = bet
 
     def withdraw(self):
         amount = self.balance
         self.balance = 0
-        print(
-            "You have withdrawn {amount}$, congrats! Your balance is now set to {balance}$".format(
-                amount=amount, balance=self.balance
+        self.bet = 0
+        self.lines = 1
+        if amount == 0:
+            console.print(
+                "\n[warning]You cannot withdraw any money because your balance is 0$[/warning]\n"
             )
-        )
+        else:
+            console.print(
+                "\n[win]You have withdrawn {amount}$, congrats! Your balance is now set to {balance}$[/win]\n".format(
+                    amount=amount, balance=self.balance
+                )
+            )
 
     def spin(self):
-        if self.current_bet <= self.balance:
+        if self.current_bet == 0:
+            console.print("[warning]You first need to bet some money[/warning]")
+
+        elif self.current_bet <= self.balance:
             self.balance -= self.current_bet
             spins = [
                 random.choices(reel, weights=probabilities, k=COLOUMNS)
                 for reel in self.reels
             ]
 
+            print("\n")
+            print("+", "-" * len(longest_symbol) * 3, "+")
             for i in range(3):
                 padded_symbols = [spin.ljust(len(longest_symbol)) for spin in spins[i]]
-                print("|".join(padded_symbols))
+
+                for symbol in padded_symbols:
+                    console.print(
+                        symbol, style=f"bold {symbol_to_color[symbol.strip()]}", end=""
+                    )
+                    console.print("|", style="bold white", end="")
+                console.print()  # Print newline at the end of each row
+            print("+", "-" * len(longest_symbol) * 3, "+")
 
             total_win = 0
             if self.lines >= 1:
@@ -138,11 +174,13 @@ class SlotMachine:
                 total_win += check_diagonal(spins, self.current_bet)
 
             self.balance += total_win
-            print(f"You won {total_win}$ and your total balance is {self.balance}$")
+            console.print(
+                f"\n[win]You won {total_win}$ and your total balance is {self.balance}$[/win]\n"
+            )
 
         else:
-            print(
-                f"You do not have enough money to place this bet. Your current balance is {self.balance}"
+            console.print(
+                f"\n[warning]You do not have enough money to place this bet. Your current balance is {self.balance}[/warning]"
             )
 
 
@@ -159,11 +197,19 @@ def game():
         4: slot_machine.withdraw,
         5: "exit",
     }
+    print(f.renderText("Welcome!"))
     while True:
-        print(
-            "\n1. Make a deposit\n2. Place a bet\n3. Spin\n4. Withdraw the money\n5. Stop playing"
-        )
-        choice = input("What do you want to do(1-5)? ")
+        print("[bold cyan]\nHere are your options:")
+        options = [
+            "Make a deposit",
+            "Place a bet",
+            "Spin",
+            "Withdraw the money",
+            "Stop playing",
+        ]
+        for i, option in enumerate(options, 1):
+            print(f"[bold yellow]{i}. [bold green]{option}")
+        choice = input("\nWhat do you want to do (1-5)? ")
         if choice.isdigit():
             choice = int(choice)
             if choice in user_choices:
